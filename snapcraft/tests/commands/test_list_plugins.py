@@ -28,12 +28,12 @@ class ListPluginsCommandTestCase(CommandBaseTestCase):
 
     # plugin list when wrapper at MAX_CHARACTERS_WRAP
     default_plugin_output = (
-        'ant        cmake  go      gulp     kbuild  maven  '
-        'nodejs             python2  ruby   tar-content\n'
-        'autotools  copy   godeps  jdk      kernel  meson  '
+        'ant        catkin-tools  dump    gradle  jhbuild  '
+        'make   nil                python   qmake  scons      \n'
+        'autotools  cmake         go      gulp    kbuild   '
+        'maven  nodejs             python2  ruby   tar-content\n'
+        'catkin     copy          godeps  jdk     kernel   meson  '
         'plainbox-provider  python3  rust   waf        \n'
-        'catkin     dump   gradle  jhbuild  make    nil    '
-        'python             qmake    scons\n'
     )
 
     def test_list_plugins_non_tty(self):
@@ -62,12 +62,14 @@ class ListPluginsCommandTestCase(CommandBaseTestCase):
         self.useFixture(fake_terminal)
 
         expected_output = (
-            'ant        go       kbuild  nodejs             ruby       \n'
-            'autotools  godeps   kernel  plainbox-provider  rust       \n'
-            'catkin     gradle   make    python             scons      \n'
-            'cmake      gulp     maven   python2            tar-content\n'
-            'copy       jdk      meson   python3            waf        \n'
-            'dump       jhbuild  nil     qmake            \n'
+            'ant           godeps   maven              qmake      \n'
+            'autotools     gradle   meson              ruby       \n'
+            'catkin        gulp     nil                rust       \n'
+            'catkin-tools  jdk      nodejs             scons      \n'
+            'cmake         jhbuild  plainbox-provider  tar-content\n'
+            'copy          kbuild   python             waf        \n'
+            'dump          kernel   python2          \n'
+            'go            make     python3          \n'
         )
 
         result = self.run_command([self.command_name])
