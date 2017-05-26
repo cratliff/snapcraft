@@ -83,11 +83,11 @@ class CatkinPluginBaseTestCase(tests.TestCase):
         self.dependencies_mock = patcher.start()
         self.addCleanup(patcher.stop)
 
-        patcher = mock.patch('snapcraft.plugins.catkin._Rosdep')
+        patcher = mock.patch('snapcraft.plugins.catkin.Rosdep')
         self.rosdep_mock = patcher.start()
         self.addCleanup(patcher.stop)
 
-        patcher = mock.patch('snapcraft.plugins.catkin._Catkin')
+        patcher = mock.patch('snapcraft.plugins.catkin.Catkin')
         self.catkin_mock = patcher.start()
         self.addCleanup(patcher.stop)
 
@@ -296,7 +296,7 @@ class CatkinPluginTestCase(CatkinPluginBaseTestCase):
                                      self.project_options)
         self.assertTrue('xenial' in plugin.PLUGIN_STAGE_SOURCES)
 
-    @mock.patch('snapcraft.plugins.catkin._Compilers')
+    @mock.patch('snapcraft.plugins.catkin.Compilers')
     def test_pull_invalid_dependency(self, compilers_mock):
         plugin = catkin.CatkinPlugin('test-part', self.properties,
                                      self.project_options)
@@ -431,7 +431,7 @@ class CatkinPluginTestCase(CatkinPluginBaseTestCase):
                          'source-space cannot be the root of the Catkin '
                          'workspace')
 
-    @mock.patch('snapcraft.plugins.catkin._Compilers')
+    @mock.patch('snapcraft.plugins.catkin.Compilers')
     @mock.patch.object(catkin.CatkinPlugin, 'run')
     @mock.patch.object(catkin.CatkinPlugin, '_run_in_bash')
     @mock.patch.object(catkin.CatkinPlugin, 'run_output', return_value='foo')
@@ -470,7 +470,7 @@ class CatkinPluginTestCase(CatkinPluginBaseTestCase):
 
         finish_build_mock.assert_called_once_with()
 
-    @mock.patch('snapcraft.plugins.catkin._Compilers')
+    @mock.patch('snapcraft.plugins.catkin.Compilers')
     @mock.patch.object(catkin.CatkinPlugin, 'run')
     @mock.patch.object(catkin.CatkinPlugin, '_run_in_bash')
     @mock.patch.object(catkin.CatkinPlugin, 'run_output', return_value='foo')
@@ -507,7 +507,7 @@ class CatkinPluginTestCase(CatkinPluginBaseTestCase):
 
         finish_build_mock.assert_called_once_with()
 
-    @mock.patch('snapcraft.plugins.catkin._Compilers')
+    @mock.patch('snapcraft.plugins.catkin.Compilers')
     @mock.patch.object(catkin.CatkinPlugin, 'run')
     @mock.patch.object(catkin.CatkinPlugin, 'run_output', return_value='foo')
     def test_build_runs_in_bash(self, run_output_mock, run_mock,
@@ -1134,9 +1134,9 @@ class RosdepTestCase(tests.TestCase):
     def setUp(self):
         super().setUp()
         self.project = snapcraft.ProjectOptions()
-        self.rosdep = catkin._Rosdep('kinetic', 'package_path',
-                                     'rosdep_path', 'sources',
-                                     self.project)
+        self.rosdep = catkin.Rosdep('kinetic', 'package_path',
+                                    'rosdep_path', 'sources',
+                                    self.project)
 
         patcher = mock.patch('snapcraft.repo.Ubuntu')
         self.ubuntu_mock = patcher.start()
@@ -1285,7 +1285,7 @@ class CompilersTestCase(tests.TestCase):
     def setUp(self):
         super().setUp()
         self.project = snapcraft.ProjectOptions()
-        self.compilers = catkin._Compilers(
+        self.compilers = catkin.Compilers(
             'compilers_path', 'sources', self.project)
 
         patcher = mock.patch('snapcraft.repo.Ubuntu')
@@ -1393,7 +1393,7 @@ class CatkinFindTestCase(tests.TestCase):
         super().setUp()
 
         self.project = snapcraft.ProjectOptions()
-        self.catkin = catkin._Catkin(
+        self.catkin = catkin.Catkin(
             'kinetic', 'workspace_path', 'catkin_path', 'sources',
             self.project)
 

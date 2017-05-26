@@ -285,7 +285,7 @@ deb http://${{security}}.ubuntu.com/${{suffix}} {0}-security main universe
                     'setup.sh'.format(underlay_build_path))
 
             # Use catkin_find to discover dependencies already in the underlay
-            catkin = _Catkin(
+            catkin = Catkin(
                 self.options.rosdistro, underlay_build_path, self._catkin_path,
                 self.PLUGIN_STAGE_SOURCES, self.project)
             catkin.setup()
@@ -295,14 +295,14 @@ deb http://${{security}}.ubuntu.com/${{suffix}} {0}-security main universe
 
         # Pull our own compilers so we use ones that match up with the version
         # of ROS we're using.
-        compilers = _Compilers(
+        compilers = Compilers(
             self._compilers_path, self.PLUGIN_STAGE_SOURCES, self.project)
         compilers.setup()
 
         # Use rosdep for dependency detection and resolution
-        rosdep = _Rosdep(self.options.rosdistro, self._ros_package_path,
-                         self._rosdep_path, self.PLUGIN_STAGE_SOURCES,
-                         self.project)
+        rosdep = Rosdep(self.options.rosdistro, self._ros_package_path,
+                        self._rosdep_path, self.PLUGIN_STAGE_SOURCES,
+                        self.project)
         rosdep.setup()
 
         self._setup_dependencies(rosdep, catkin)
@@ -565,8 +565,8 @@ deb http://${{security}}.ubuntu.com/${{suffix}} {0}-security main universe
 
         # Make sure we're using our own compilers (the one on the system may
         # be the wrong version).
-        compilers = _Compilers(
-            self._compilers_path, self.PLUGIN_STAGE_SOURCES, self.project)
+        compilers = Compilers(
+             self._compilers_path, self.PLUGIN_STAGE_SOURCES, self.project)
         catkincmd.extend([
             '-DCMAKE_C_FLAGS="$CFLAGS {}"'.format(compilers.cflags),
             '-DCMAKE_CXX_FLAGS="$CPPFLAGS {}"'.format(compilers.cxxflags),
@@ -662,7 +662,7 @@ class CatkinPackageNotFoundError(errors.SnapcraftError):
         super().__init__(package_name=package_name)
 
 
-class _Rosdep:
+class Rosdep:
     def __init__(self, ros_distro, ros_package_path, rosdep_path,
                  ubuntu_sources, project):
         self._ros_distro = ros_distro
@@ -774,7 +774,7 @@ class _Rosdep:
                                        env=env).decode('utf8').strip()
 
 
-class _Compilers:
+class Compilers:
     def __init__(self, compilers_path, ubuntu_sources, project):
         self._compilers_path = compilers_path
         self._ubuntu_sources = ubuntu_sources
@@ -857,7 +857,7 @@ class _Compilers:
             paths, prepend='-L', separator=' ')
 
 
-class _Catkin:
+class Catkin:
     def __init__(self, ros_distro, workspace, catkin_path, ubuntu_sources,
                  project):
         self._ros_distro = ros_distro

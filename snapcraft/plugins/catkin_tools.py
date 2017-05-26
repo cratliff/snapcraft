@@ -16,7 +16,7 @@
 
 """The catkin_tools build plugin is useful for building ROS parts.
 
-This plugin relies on the catkin plugin as the catkin plugin does the
+This plugin relies on the catkin plugin as the catkin plugin performs
 configuration that allows catkin_tools to run.  This plugin uses the
 same keywords and configurations as the catkin plugin, the difference
 is the installation of and using catkin_tools to build.
@@ -24,41 +24,18 @@ is the installation of and using catkin_tools to build.
 
 import os
 import logging
-import snapcraft.plugins.catkin
 
+import snapcraft.plugins.catkin
 from snapcraft.plugins.catkin import (
-    CatkinPlugin,
-    Catkin,
-    SystemDependencyNotFoundError,
-    CatkinPackageNotFoundError,
-    Rosdep,
     Compilers,
 )
 
 import snapcraft
-from snapcraft import repo
 
 logger = logging.getLogger(__name__)
 
-class CatkinToolsPlugin(CatkinPlugin, snapcraft.BasePlugin):
-    def pull(self):
-        """Copy source into build directory and fetch dependencies.
 
-        Catkin packages can specify their system dependencies in their
-        package.xml. In order to support that, the Catkin packages are
-        interrogated for their dependencies here. Since `stage-packages` are
-        already installed by the time this function is run, the dependencies
-        from the package.xml are pulled down explicitly.
-        """
-
-        super().pull(self)
-
-        # Pull catkin_tools for compilation
-        catkinTools = _Catkin_Tools(
-            self.options.rosdistro, underlay_build_path, self._catkin_path,
-            self.PLUGIN_STAGE_SOURCES, self.project)
-        catkinTools.setup()
-
+class CatkinToolsPlugin(snapcraft.plugins.catkin.CatkinPlugin):
     def build(self):
         """Build Catkin packages.
 
@@ -70,7 +47,7 @@ class CatkinToolsPlugin(CatkinPlugin, snapcraft.BasePlugin):
 
         snapcraft.BasePlugin.build(self)
 
-        logger.info('Preparing to build Catkin packages...')
+        logger.info('Preparing to build Catkin tooools packages...')
         self._prepare_build()
 
         logger.info('Building Catkin packages...')
@@ -80,7 +57,7 @@ class CatkinToolsPlugin(CatkinPlugin, snapcraft.BasePlugin):
         self._finish_build()
 
     def _prepare_build(self):
-        super()._prepare_build(self)
+        super()._prepare_build()
 
         # Use catkin config to set all configurations before running build.
         catkincmd = ['catkin']
@@ -93,7 +70,6 @@ class CatkinToolsPlugin(CatkinPlugin, snapcraft.BasePlugin):
         # Don't clutter the real ROS workspace-- use the Snapcraft build
         # directory
         catkincmd.extend(['--build-space', self.builddir])
-
 
         # Account for a non-default source space by always specifying it
         catkincmd.extend(['--source-space', os.path.join(
@@ -136,18 +112,3 @@ class CatkinToolsPlugin(CatkinPlugin, snapcraft.BasePlugin):
         # This command must run in bash due to a bug in Catkin that causes it
         # to explode if there are spaces in the cmake args (which there are).
         self._run_in_bash(catkincmd, env=compilers.environment)
-
-class _Catkin_Tools(Catkin):
-    def setup(self):
-        os.makedirs(self._catkin_install_path, exist_ok=True)
-
-        # With the introduction of an underlay, we no longer know where Catkin
-        # is. Let's just fetch/unpack our own, and use it.
-        logger.info('Preparing to fetch catkin_tools...')
-        ubuntu = repo.Ubuntu(self._catkin_path, sources=self._ubuntu_sources,
-                             project_options=self._project)
-        logger.info('Fetching catkin_tools...')
-        ubuntu.get(['python-catkin-tools'])
-
-        logger.info('Installing catkin_tools...')
-        ubuntu.unpack(self._catkin_install_path)
