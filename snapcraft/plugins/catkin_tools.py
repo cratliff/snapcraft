@@ -47,7 +47,7 @@ class CatkinToolsPlugin(snapcraft.plugins.catkin.CatkinPlugin):
 
         snapcraft.BasePlugin.build(self)
 
-        logger.info('Preparing to build Catkin tooools packages...')
+        logger.info('Preparing to build Catkin packages...')
         self._prepare_build()
 
         logger.info('Building Catkin packages...')
