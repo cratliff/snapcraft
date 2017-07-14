@@ -71,6 +71,7 @@ class CatkinPluginBaseTestCase(tests.TestCase):
             include_roscore = False
             underlay = None
             rosinstall_files = None
+            ros_master_uri = 'http://localhost:11311'
 
         self.properties = props()
         self.project_options = snapcraft.ProjectOptions()
@@ -113,30 +114,31 @@ class CatkinPluginBaseTestCase(tests.TestCase):
 class CatkinPluginTestCase(CatkinPluginBaseTestCase):
 
     def test_schema(self):
+
+        def verify_expected_properties(properties, expected):
+            for prop in expected:
+                self.assertThat(properties, Contains(prop))
+            self.assertThat(properties, HasLength(len(expected)))
+
         schema = catkin.CatkinPlugin.schema()
 
         properties = schema['properties']
         expected = ('rosdistro', 'catkin-packages', 'source-space',
-                    'include-roscore', 'underlay', 'rosinstall-files')
-        self.assertThat(properties, HasLength(len(expected)))
-        for prop in expected:
-            self.assertThat(properties, Contains(prop))
+                    'include-roscore', 'underlay', 'rosinstall-files',
+                    'ros-master-uri')
+        verify_expected_properties(properties, expected)
 
         # Check rosdistro property
         rosdistro = properties['rosdistro']
         expected = ('type', 'default')
-        self.assertThat(rosdistro, HasLength(len(expected)))
-        for prop in expected:
-            self.assertThat(rosdistro, Contains(prop))
+        verify_expected_properties(rosdistro, expected)
         self.assertThat(rosdistro['type'], Equals('string'))
         self.assertThat(rosdistro['default'], Equals('indigo'))
 
         # Check catkin-packages property
         catkin_packages = properties['catkin-packages']
         expected = ('type', 'default', 'minitems', 'uniqueItems', 'items')
-        self.assertThat(catkin_packages, HasLength(len(expected)))
-        for prop in expected:
-            self.assertThat(catkin_packages, Contains(prop))
+        verify_expected_properties(catkin_packages, expected)
         self.assertThat(catkin_packages['type'], Equals('array'))
         self.assertThat(catkin_packages['default'], Equals([]))
         self.assertThat(catkin_packages['minitems'], Equals(1))
@@ -147,40 +149,30 @@ class CatkinPluginTestCase(CatkinPluginBaseTestCase):
         # Check source-space property
         source_space = properties['source-space']
         expected = ('type', 'default')
-        self.assertThat(source_space, HasLength(len(expected)))
-        for prop in expected:
-            self.assertThat(source_space, Contains(prop))
+        verify_expected_properties(source_space, expected)
         self.assertThat(source_space['type'], Equals('string'))
         self.assertThat(source_space['default'], Equals('src'))
 
         # Check include-roscore property
         include_roscore = properties['include-roscore']
         expected = ('type', 'default')
-        self.assertThat(include_roscore, HasLength(len(expected)))
-        for prop in expected:
-            self.assertThat(include_roscore, Contains(prop))
+        verify_expected_properties(include_roscore, expected)
         self.assertThat(include_roscore['type'], Equals('boolean'))
         self.assertThat(include_roscore['default'], Equals('true'))
 
         # Check underlay property
         underlay = properties['underlay']
         expected = ('type', 'properties', 'required')
-        self.assertThat(underlay, HasLength(len(expected)))
-        for prop in expected:
-            self.assertThat(underlay, Contains(prop))
+        verify_expected_properties(underlay, expected)
         self.assertThat(underlay['type'], Equals('object'))
 
         underlay_required = underlay['required']
         expected = ('build-path', 'run-path')
-        self.assertThat(underlay_required, HasLength(len(expected)))
-        for prop in expected:
-            self.assertThat(underlay_required, Contains(prop))
+        verify_expected_properties(underlay_required, expected)
 
         underlay_properties = underlay['properties']
         expected = ('build-path', 'run-path')
-        self.assertThat(underlay_properties, HasLength(len(expected)))
-        for prop in expected:
-            self.assertThat(underlay_properties, Contains(prop))
+        verify_expected_properties(underlay_properties, expected)
         underlay_build_path = underlay_properties['build-path']
         self.assertThat(underlay_build_path, Contains('type'))
         self.assertThat(underlay_build_path['type'], Equals('string'))
@@ -191,15 +183,21 @@ class CatkinPluginTestCase(CatkinPluginBaseTestCase):
         # Check rosinstall-files property
         rosinstall_files = properties['rosinstall-files']
         expected = ('type', 'default', 'minitems', 'uniqueItems', 'items')
-        self.assertThat(rosinstall_files, HasLength(len(expected)))
-        for prop in expected:
-            self.assertThat(rosinstall_files, Contains(prop))
+        verify_expected_properties(rosinstall_files, expected)
         self.assertThat(catkin_packages['type'], Equals('array'))
         self.assertThat(catkin_packages['default'], Equals([]))
         self.assertThat(catkin_packages['minitems'], Equals(1))
         self.assertTrue(catkin_packages['uniqueItems'])
         self.assertThat(catkin_packages['items'], Contains('type'))
         self.assertThat(catkin_packages['items']['type'], Equals('string'))
+
+        # Check ros-master-uri property
+        ros_master_uri = properties['ros-master-uri']
+        expected = ('type', 'default')
+        verify_expected_properties(ros_master_uri, expected)
+        self.assertThat(ros_master_uri['type'], Equals('string'))
+        self.assertThat(ros_master_uri['default'],
+                        Equals('http://localhost:11311'))
 
         # Check required
         self.assertTrue('catkin-packages' in schema['required'],
@@ -569,7 +567,7 @@ class CatkinPluginTestCase(CatkinPluginBaseTestCase):
             'PYTHONPATH={}:$PYTHONPATH'.format(python_path)))
 
         self.assertThat(environment, Contains(
-            'ROS_MASTER_URI=http://localhost:11311'))
+            'ROS_MASTER_URI=' + self.properties.ros_master_uri))
 
         self.assertThat(
             environment, Contains('ROS_HOME=${SNAP_USER_DATA:-/tmp}/ros'))
@@ -610,6 +608,18 @@ class CatkinPluginTestCase(CatkinPluginBaseTestCase):
 
         self.assertThat(environment, Contains('. {}'.format(
             os.path.join(plugin.rosdir, 'snapcraft-setup.sh'))))
+
+    @mock.patch.object(catkin.CatkinPlugin, '_source_setup_sh',
+                       return_value='test-source-setup.sh')
+    @mock.patch.object(catkin.CatkinPlugin, 'run_output', return_value='bar')
+    def test_run_environment_with_ros_master_uri(self, run_mock,
+                                                 source_setup_sh_mock):
+
+        self.properties.ros_master_uri = 'http:rosmaster:11311'
+        plugin = catkin.CatkinPlugin('test-part', self.properties,
+                                     self.project_options)
+
+        self._verify_run_environment(plugin)
 
     @mock.patch.object(catkin.CatkinPlugin, '_source_setup_sh',
                        return_value='test-source-setup')
@@ -691,6 +701,7 @@ class CatkinPluginTestCase(CatkinPluginBaseTestCase):
 
     @mock.patch.object(catkin.CatkinPlugin, 'run_output', return_value='bar')
     def test_run_environment_no_python(self, run_mock):
+        self.properties.ros_master_uri = 'http://localhost:11311'
         plugin = catkin.CatkinPlugin('test-part', self.properties,
                                      self.project_options)
 

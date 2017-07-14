@@ -38,6 +38,10 @@ Additionally, this plugin uses the following plugin-specific keywords:
       (list of strings)
       List of rosinstall files to merge while pulling. Paths are relative to
       the source.
+    - ros-master-uri:
+      (string)
+      The uri to ros master setting the env variable ROS_MASTER_URI. Defaults
+      to https://localhost:11311.
     - underlay:
       (object)
       Used to inform Snapcraft that this snap isn't standalone, and is actually
@@ -138,6 +142,11 @@ class CatkinPlugin(snapcraft.BasePlugin):
             'default': [],
         }
 
+        schema['properties']['ros-master-uri'] = {
+            'type': 'string',
+            'default': 'http://localhost:11311'
+        }
+
         schema['required'].append('catkin-packages')
 
         return schema
@@ -214,8 +223,8 @@ deb http://${{security}}.ubuntu.com/${{suffix}} {0}-security main universe
         env = [
             # This environment variable tells ROS nodes where to find ROS
             # master. It does not affect ROS master, however-- this is just the
-            # default URI.
-            'ROS_MASTER_URI=http://localhost:11311',
+            # URI.
+            'ROS_MASTER_URI=' + self.options.ros_master_uri,
 
             # Various ROS tools (e.g. rospack, roscore) keep a cache or a log,
             # and use $ROS_HOME to determine where to put them.
