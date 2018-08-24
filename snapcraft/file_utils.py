@@ -19,6 +19,12 @@ import hashlib
 import logging
 import os
 import shutil
+
+copyfileobj = shutil.copyfileobj
+def copyfileobj_override(fsrc, fdst, length= 128 * 1024 * 1024 ):
+    copyfileobj(fsrc, fdst, length)
+shutil.copyfileobj = copyfileobj_override
+
 import subprocess
 import sys
 
