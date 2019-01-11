@@ -219,6 +219,12 @@ class CatkinPlugin(snapcraft.BasePlugin):
 
     @property
     def PLUGIN_STAGE_SOURCES(self):
+        if os.environ.get("LOCAL_REPO") is not None:
+            local_repo = os.environ.get("LOCAL_REPO")
+            return "deb [trusted=yes] {local_repo} {codename} main".format(
+                    local_repo=local_repo,
+                    codename=_ROS_RELEASE_MAP[self.options.rosdistro])
+
         ros_repo = 'http://packages.ros.org/ros/ubuntu/'
         ubuntu_repo = 'http://${prefix}.ubuntu.com/${suffix}/'
         security_repo = 'http://${security}.ubuntu.com/${suffix}/'

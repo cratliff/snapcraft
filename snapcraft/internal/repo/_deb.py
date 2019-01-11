@@ -52,6 +52,11 @@ deb http://${security}.ubuntu.com/${suffix} ${release}-security main restricted
 deb http://${security}.ubuntu.com/${suffix} ${release}-security universe
 deb http://${security}.ubuntu.com/${suffix} ${release}-security multiverse
 '''
+if os.environ.get("LOCAL_REPO") is not None:
+    _DEFAULT_SOURCES = ('deb [trusted=yes] '
+            + os.environ.get("LOCAL_REPO")
+            + ' ${release} main')
+
 _GEOIP_SERVER = "http://geoip.ubuntu.com/lookup"
 _library_list = dict()  # type: Dict[str, Set[str]]
 
