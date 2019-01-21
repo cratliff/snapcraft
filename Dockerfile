@@ -22,12 +22,8 @@ python3 -m venv /venv/snapcraft && \
 pip --no-cache-dir install wheel && \
 pip --no-cache-dir install -r /snapcraft/requirements.txt
 
-RUN echo """#!/bin/bash\n\
-    \n\
-    . /venv/snapcraft/bin/activate\n\
-    python3 /snapcraft/bin/snapcraft \$@\n\
-    deactivate\
-    """ > /bin/snapcraft && chmod +x /bin/snapcraft
+
+ADD docker-files/snapcraft /bin/snapcraft
 
 RUN echo  "deb [trusted=yes] http://aptly:8080 xenial main" > /etc/apt/sources.list
 # Required by click.
