@@ -18,6 +18,7 @@ import os
 import logging
 import re
 import shutil
+import snapcraft
 import subprocess
 import sys
 
@@ -64,6 +65,7 @@ class Rosdep:
         ros_distro,
         ros_package_path,
         rosdep_path,
+        rosdep_source,
         ubuntu_distro,
         ubuntu_sources,
         ubuntu_keyrings,
@@ -72,6 +74,7 @@ class Rosdep:
         self._ros_distro = ros_distro
         self._ros_package_path = ros_package_path
         self._rosdep_path = rosdep_path
+        self._rosdep_source = rosdep_source
         self._ubuntu_distro = ubuntu_distro
         self._ubuntu_sources = ubuntu_sources
         self._ubuntu_keyrings = ubuntu_keyrings
@@ -107,14 +110,17 @@ class Rosdep:
         logger.info("Installing rosdep...")
         ubuntu.unpack(self._rosdep_install_path)
 
-        logger.info("Initializing rosdep database...")
-        try:
-            self._run(["init"])
-        except subprocess.CalledProcessError as e:
-            output = e.output.decode(sys.getfilesystemencoding()).strip()
-            raise RosdepInitializationError(
-                "Error initializing rosdep database:\n{}".format(output)
-            )
+        if self._rosdep_source is None:
+            logger.info("Initializing rosdep database...")
+            try:
+                self._run(["init"])
+            except subprocess.CalledProcessError as e:
+                output = e.output.decode(sys.getfilesystemencoding()).strip()
+                raise RuntimeError(
+                    'Error initializing rosdep database:\n{}'.format(output))
+        else:
+            snapcraft.file_utils.link_or_copy_tree(
+                self._rosdep_source, self._rosdep_sources_path)
 
         logger.info("Updating rosdep database...")
         try:
