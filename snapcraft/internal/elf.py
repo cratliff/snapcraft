@@ -20,6 +20,7 @@ import logging
 import os
 import subprocess
 import sys
+from multiprocessing import Pool
 from typing import FrozenSet, List, Set, Sequence
 
 import magic
@@ -198,6 +199,29 @@ def get_dependencies(elf: str) -> Set[str]:
     return libs
 
 
+def _get_elf_file(file_path):
+    ms = magic.open(magic.NONE)
+    if ms.load() != 0:
+        raise RuntimeError('Cannot load magic header detection')
+
+    if os.path.islink(file_path):
+        logger.debug('Skipped link {!r} while finding dependencies'.format(
+            file_path))
+        return None
+
+    fs_encoding = sys.getfilesystemencoding()
+
+    path_b = file_path.encode(
+        fs_encoding, errors='surrogateescape')  # type: bytes
+    # Finally, make sure this is actually an ELF before queueing it up
+    # for an ldd call.
+    file_m = ms.file(path_b)
+    if file_m.startswith('ELF') and 'dynamically linked' in file_m:
+        is_executable = 'interpreter' in file_m
+        elf_file = ElfFile(path=file_path, is_executable=is_executable)
+        return elf_file
+
+
 def get_elf_files(root: str,
                   file_list: Sequence[str]) -> FrozenSet[ElfFile]:
     """Return a frozenset of elf files from file_list prepended with root.
@@ -206,33 +230,11 @@ def get_elf_files(root: str,
     :param file_list: a list of file in root.
     :returns: a frozentset of ElfFile objects.
     """
-    ms = magic.open(magic.NONE)
-    if ms.load() != 0:
-        raise RuntimeError('Cannot load magic header detection')
-
     elf_files = set()  # type: Set[ElfFile]
 
-    fs_encoding = sys.getfilesystemencoding()
-
-    for part_file in file_list:
-        # Filter out object (*.o) files-- we only care about binaries.
-        if part_file.endswith('.o'):
-            continue
-
-        # No need to crawl links-- the original should be here, too.
-        path = os.path.join(root, part_file)  # type: str
-        if os.path.islink(path):
-            logger.debug('Skipped link {!r} while finding dependencies'.format(
-                path))
-            continue
-
-        path_b = path.encode(
-            fs_encoding, errors='surrogateescape')  # type: bytes
-        # Finally, make sure this is actually an ELF before queueing it up
-        # for an ldd call.
-        file_m = ms.file(path_b)
-        if file_m.startswith('ELF') and 'dynamically linked' in file_m:
-            is_executable = 'interpreter' in file_m
-            elf_files.add(ElfFile(path=path, is_executable=is_executable))
+    file_list = [os.path.join(root, part_file) for part_file in file_list \
+                        if not part_file.endswith('.o')]
+    elf_files = Pool().map(_get_elf_file, file_list)
+    elf_files = [elf for elf in elf_files if elf is not None]
 
     return frozenset(elf_files)
