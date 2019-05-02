@@ -22,6 +22,7 @@ import os
 import shutil
 import sys
 from glob import glob, iglob
+from multiprocessing import Pool
 
 import yaml
 
@@ -443,8 +444,12 @@ class PluginHandler:
 
         elf_files = elf.get_elf_files(self.primedir, snap_files)
         dependencies = set()
-        for elf_file in elf_files:
-            dependencies.update(elf.get_dependencies(elf_file.path))
+
+        elf_dependencies = Pool().map(elf.get_dependencies,
+                              [elf_file.path for elf_file in elf_files])
+
+        if len(elf_dependencies) > 0:
+            dependencies.update(set.union(*elf_dependencies))
 
         # Split the necessary dependencies into their corresponding location.
         # We'll both migrate and track the system dependencies, but we'll only
