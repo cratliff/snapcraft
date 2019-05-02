@@ -119,6 +119,9 @@ class CatkinToolsPlugin(snapcraft.plugins.catkin.CatkinPlugin):
         # Prevent notification that the build is complete.
         catkincmd.append('--no-notify')
 
+        # Limit status refresh rate
+        catkincmd.extend([' --limit-status-rate', '1'])
+
         # Use the newly created default profile.
         catkincmd.extend(['--profile', 'default'])
 
